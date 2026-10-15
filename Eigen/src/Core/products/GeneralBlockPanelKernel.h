@@ -82,6 +82,17 @@ struct CacheSizes {
   std::ptrdiff_t m_l3;
 };
 
+#if defined(EIGEN_CUDACC_RTC)
+/** \internal NVRTC: the CPU cache sizes cannot be queried and device code cannot have dynamically initialized
+ * function-scope statics, so the default cache sizes are always used and SetAction is ignored. */
+inline void manage_caching_sizes(Action action, std::ptrdiff_t* l1, std::ptrdiff_t* l2, std::ptrdiff_t* l3) {
+  if (action == GetAction) {
+    *l1 = defaultL1CacheSize;
+    *l2 = defaultL2CacheSize;
+    *l3 = defaultL3CacheSize;
+  }
+}
+#else
 /** \internal */
 inline void manage_caching_sizes(Action action, std::ptrdiff_t* l1, std::ptrdiff_t* l2, std::ptrdiff_t* l3) {
   static CacheSizes m_cacheSizes;
@@ -101,6 +112,7 @@ inline void manage_caching_sizes(Action action, std::ptrdiff_t* l1, std::ptrdiff
     eigen_internal_assert(false);
   }
 }
+#endif
 
 /* Helper for computeProductBlockingSizes.
  *

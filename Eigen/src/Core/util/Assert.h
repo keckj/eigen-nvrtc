@@ -29,7 +29,11 @@
 //  - gpu debugging is enabled.
 #if !defined(EIGEN_NO_DEBUG) && (!defined(EIGEN_GPU_COMPILE_PHASE) || !defined(EIGEN_NO_DEBUG_GPU))
 
+#ifdef EIGEN_CUDACC_RTC
+#include <cuda/std/cassert>
+#else
 #include <cassert>
+#endif
 
 #ifndef EIGEN_USE_CUSTOM_PLAIN_ASSERT
 // Disable new custom asserts by default for now.

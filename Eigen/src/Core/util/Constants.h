@@ -537,6 +537,20 @@ struct MatrixXpr {};
 struct ArrayXpr {};
 
 // An evaluator must define its shape. By default, it can be one of the following:
+#ifdef EIGEN_CUDACC_RTC
+// std::string is not available with NVRTC, debugName() is omitted.
+struct DenseShape {};
+struct SolverShape {};
+struct HomogeneousShape {};
+struct DiagonalShape {};
+struct SkewSymmetricShape {};
+struct BandShape {};
+struct TriangularShape {};
+struct SelfAdjointShape {};
+struct PermutationShape {};
+struct TranspositionsShape {};
+struct SparseShape {};
+#else
 struct DenseShape {
   static std::string debugName() { return "DenseShape"; }
 };
@@ -570,6 +584,7 @@ struct TranspositionsShape {
 struct SparseShape {
   static std::string debugName() { return "SparseShape"; }
 };
+#endif
 
 namespace internal {
 

@@ -16,7 +16,9 @@
 
 #if defined(EIGEN_GPU_COMPILE_PHASE)
 
+#ifndef EIGEN_CUDACC_RTC
 #include <cfloat>
+#endif
 
 #if defined(EIGEN_CUDA_ARCH)
 #include <math_constants.h>
@@ -29,7 +31,9 @@
 #endif
 
 // Define portable (u)int{32,64} types
+#ifndef EIGEN_CUDACC_RTC
 #include <cstdint>
+#endif
 
 namespace Eigen {
 namespace numext {

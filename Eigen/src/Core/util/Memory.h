@@ -145,6 +145,31 @@ EIGEN_DEVICE_FUNC inline void throw_std_bad_alloc() {
 #endif
 }
 
+#if defined(EIGEN_CUDACC_RTC)
+// The CUDA device runtime provides malloc, free and memcpy, but neither realloc nor memmove.
+
+/** \internal realloc() replacement for NVRTC, \a old_size is the size of the block pointed to by \a ptr. */
+EIGEN_DEVICE_FUNC inline void* nvrtc_realloc(void* ptr, std::size_t new_size, std::size_t old_size) {
+  void* result = ::malloc(new_size);
+  if (result != nullptr && ptr != nullptr) {
+    ::memcpy(result, ptr, old_size < new_size ? old_size : new_size);
+    ::free(ptr);
+  }
+  return result;
+}
+
+/** \internal memmove() replacement for NVRTC. */
+EIGEN_DEVICE_FUNC inline void nvrtc_memmove(void* dst, const void* src, std::size_t count) {
+  unsigned char* d = static_cast<unsigned char*>(dst);
+  const unsigned char* s = static_cast<const unsigned char*>(src);
+  if (d < s) {
+    for (std::size_t i = 0; i < count; ++i) d[i] = s[i];
+  } else if (d > s) {
+    for (std::size_t i = count; i > 0; --i) d[i - 1] = s[i - 1];
+  }
+}
+#endif
+
 /*****************************************************************************
 *** Implementation of handmade aligned functions                           ***
 *****************************************************************************/
@@ -194,8 +219,12 @@ EIGEN_DEVICE_FUNC inline void* handmade_aligned_realloc(void* ptr, std::size_t n
   void* old_original = static_cast<uint8_t*>(ptr) - old_offset;
 
   check_that_malloc_is_allowed();
+#if defined(EIGEN_CUDACC_RTC)
+  void* original = nvrtc_realloc(old_original, new_size + alignment, old_size + alignment);
+#else
   EIGEN_USING_STD(realloc)
   void* original = realloc(old_original, new_size + alignment);
+#endif
   if (original == nullptr) return nullptr;
   if (original == old_original) return ptr;
   std::size_t offset = alignment - (reinterpret_cast<std::size_t>(original) & (alignment - 1));
@@ -203,7 +232,11 @@ EIGEN_DEVICE_FUNC inline void* handmade_aligned_realloc(void* ptr, std::size_t n
   if (offset != old_offset) {
     const void* src = static_cast<const void*>(static_cast<uint8_t*>(original) + old_offset);
     std::size_t count = (std::min)(new_size, old_size);
+#if defined(EIGEN_CUDACC_RTC)
+    nvrtc_memmove(aligned, src, count);
+#else
     std::memmove(aligned, src, count);
+#endif
   }
   // Store offset - 1, since it is guaranteed to be at least 1.
   *(static_cast<uint8_t*>(aligned) - 1) = static_cast<uint8_t>(offset - 1);
@@ -270,8 +303,12 @@ EIGEN_DEVICE_FUNC inline void* aligned_realloc(void* ptr, std::size_t new_size, 
   EIGEN_UNUSED_VARIABLE(old_size)
 
   check_that_malloc_is_allowed();
+#if defined(EIGEN_CUDACC_RTC)
+  result = nvrtc_realloc(ptr, new_size, old_size);
+#else
   EIGEN_USING_STD(realloc)
   result = realloc(ptr, new_size);
+#endif
 #else
   result = handmade_aligned_realloc(ptr, new_size, old_size);
 #endif
@@ -336,8 +373,12 @@ EIGEN_DEVICE_FUNC inline void* conditional_aligned_realloc<false>(void* ptr, std
   }
 
   check_that_malloc_is_allowed();
+#if defined(EIGEN_CUDACC_RTC)
+  return nvrtc_realloc(ptr, new_size, old_size);
+#else
   EIGEN_USING_STD(realloc)
   return realloc(ptr, new_size);
+#endif
 }
 
 /*****************************************************************************
@@ -618,7 +659,11 @@ struct smart_memmove_helper<T, true> {
     std::intptr_t size = std::intptr_t(end) - std::intptr_t(start);
     if (size == 0) return;
     eigen_internal_assert(start != 0 && end != 0 && target != 0);
+#if defined(EIGEN_CUDACC_RTC)
+    nvrtc_memmove(target, start, size);
+#else
     std::memmove(target, start, size);
+#endif
   }
 };
 

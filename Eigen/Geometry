@@ -12,7 +12,9 @@
 
 #include "SVD"
 #include "LU"
+#ifndef EIGEN_CUDACC_RTC
 #include <limits>
+#endif
 
 #include "src/Core/util/DisableStupidWarnings.h"
 

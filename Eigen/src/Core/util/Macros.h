@@ -147,7 +147,8 @@
 #define EIGEN_COMP_MSVC 0
 #endif
 
-#if defined(__NVCC__)
+// NVRTC (__CUDACC_RTC__) shares the nvcc front-end.
+#if defined(__NVCC__) || defined(__CUDACC_RTC__)
 #if defined(__CUDACC_VER_MAJOR__) && (__CUDACC_VER_MAJOR__ >= 9)
 #define EIGEN_COMP_NVCC ((__CUDACC_VER_MAJOR__ * 10000) + (__CUDACC_VER_MINOR__ * 100))
 #elif defined(__CUDACC_VER__)
@@ -561,7 +562,10 @@
 #define EIGEN_CUDA_ARCH __CUDA_ARCH__
 #endif
 
-#if defined(EIGEN_CUDACC)
+#if defined(EIGEN_CUDACC_RTC)
+// NVRTC: <cuda.h> is not available, derive the SDK version from the compiler version.
+#define EIGEN_CUDA_SDK_VER (__CUDACC_VER_MAJOR__ * 10000 + __CUDACC_VER_MINOR__ * 100)
+#elif defined(EIGEN_CUDACC)
 #include <cuda.h>
 #define EIGEN_CUDA_SDK_VER (CUDA_VERSION * 10)
 #else
@@ -751,7 +755,9 @@
 
 // Does the compiler support C99?
 // Need to include <cmath> to make sure _GLIBCXX_USE_C99 gets defined
+#ifndef EIGEN_CUDACC_RTC
 #include <cmath>
+#endif
 #ifndef EIGEN_HAS_C99_MATH
 #if ((defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901)) ||                                          \
      (defined(__GNUC__) && defined(_GLIBCXX_USE_C99)) || (defined(_LIBCPP_VERSION) && !defined(_MSC_VER)) || \
@@ -1123,7 +1129,7 @@ EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE constexpr void ignore_unused_variable(cons
 // pull in math functions from the global namespace.
 // In host mode, and when device code is compiled with clang,
 // use the std versions.
-#if (defined(EIGEN_CUDA_ARCH) && defined(__NVCC__)) || defined(EIGEN_HIP_DEVICE_COMPILE)
+#if (defined(EIGEN_CUDA_ARCH) && (defined(__NVCC__) || defined(EIGEN_CUDACC_RTC))) || defined(EIGEN_HIP_DEVICE_COMPILE)
 #define EIGEN_USING_STD(FUNC) using ::FUNC;
 #else
 #define EIGEN_USING_STD(FUNC) using std::FUNC;

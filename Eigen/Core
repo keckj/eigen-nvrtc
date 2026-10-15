@@ -14,6 +14,9 @@
 // Eigen version information.
 #include "Version"
 
+// NVRTC support: maps std onto libcu++, must come before any other include.
+#include "src/Core/util/NVRTCSupport.h"
+
 // first thing Eigen does: stop the compiler from reporting useless warnings.
 #include "src/Core/util/DisableStupidWarnings.h"
 
@@ -26,13 +29,16 @@
 
 // We need cuda_runtime.h/hip_runtime.h to ensure that
 // the EIGEN_USING_STD macro works properly on the device side
-#if defined(EIGEN_CUDACC)
+// (NVRTC declares the CUDA runtime device functions implicitly).
+#if defined(EIGEN_CUDACC_RTC)
+// nothing to include
+#elif defined(EIGEN_CUDACC)
 #include <cuda_runtime.h>
 #elif defined(EIGEN_HIPCC)
 #include <hip/hip_runtime.h>
 #endif
 
-#ifdef EIGEN_EXCEPTIONS
+#if defined(EIGEN_EXCEPTIONS) && !defined(EIGEN_CUDACC_RTC)
 #include <new>
 #endif
 
@@ -48,7 +54,9 @@
 #if EIGEN_COMP_ICC && defined(EIGEN_GPU_COMPILE_PHASE) && !defined(_OVERRIDE_COMPLEX_SPECIALIZATION_)
 #define _OVERRIDE_COMPLEX_SPECIALIZATION_ 1
 #endif
+#ifndef EIGEN_CUDACC_RTC
 #include <complex>
+#endif
 
 // this include file manages BLAS and MKL related macros
 // and inclusion of their respective header files
@@ -76,6 +84,9 @@
 #define EIGEN_HAS_ERRNO
 #endif
 
+// The standard library is not available under NVRTC, the libcu++ replacements
+// are included by NVRTCSupport.h.
+#ifndef EIGEN_CUDACC_RTC
 #ifdef EIGEN_HAS_ERRNO
 #include <cerrno>
 #endif
@@ -126,6 +137,7 @@
 #if EIGEN_COMP_MSVC && (EIGEN_ARCH_i386_OR_x86_64 || EIGEN_ARCH_ARM64) && !EIGEN_OS_WINCE
 #include <intrin.h>
 #endif
+#endif  // EIGEN_CUDACC_RTC
 
 #if defined(EIGEN_USE_SYCL)
 #undef min

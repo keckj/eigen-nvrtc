@@ -319,7 +319,7 @@ constexpr const bool numeric_limits_half_impl<T>::tinyness_before;
 }  // end namespace half_impl
 }  // end namespace Eigen
 
-namespace std {
+EIGEN_STD_NS_BEGIN
 // If std::numeric_limits<T> is specialized, should also specialize
 // std::numeric_limits<const T>, std::numeric_limits<volatile T>, and
 // std::numeric_limits<const volatile T>
@@ -332,7 +332,7 @@ template <>
 class numeric_limits<volatile Eigen::half> : public numeric_limits<Eigen::half> {};
 template <>
 class numeric_limits<const volatile Eigen::half> : public numeric_limits<Eigen::half> {};
-}  // end namespace std
+EIGEN_STD_NS_END
 
 namespace Eigen {
 

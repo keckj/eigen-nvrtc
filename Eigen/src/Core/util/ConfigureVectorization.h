@@ -478,14 +478,18 @@ extern "C" {
 
 #if defined EIGEN_CUDACC
 #define EIGEN_VECTORIZE_GPU
+#ifndef EIGEN_CUDACC_RTC  // NVRTC declares the CUDA vector types implicitly
 #include <vector_types.h>
+#endif
 #if EIGEN_CUDA_SDK_VER >= 70500
 #define EIGEN_HAS_CUDA_FP16
 #endif
 #endif
 
 #if defined(EIGEN_HAS_CUDA_FP16)
+#ifndef EIGEN_CUDACC_RTC  // not available under NVRTC, and not needed
 #include <cuda_runtime_api.h>
+#endif
 #include <cuda_fp16.h>
 #endif
 
@@ -504,6 +508,8 @@ extern "C" {
 
 namespace Eigen {
 
+// Host-only (NVRTC only compiles device code).
+#ifndef EIGEN_CUDACC_RTC
 inline static const char *SimdInstructionSetsInUse(void) {
 #if defined(EIGEN_VECTORIZE_AVX512)
   return "AVX512, FMA, AVX2, AVX, SSE, SSE2, SSE3, SSSE3, SSE4.1, SSE4.2";
@@ -537,6 +543,7 @@ inline static const char *SimdInstructionSetsInUse(void) {
   return "None";
 #endif
 }
+#endif  // EIGEN_CUDACC_RTC
 
 }  // end namespace Eigen
 

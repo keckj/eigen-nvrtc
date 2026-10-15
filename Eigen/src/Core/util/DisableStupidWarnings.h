@@ -83,7 +83,7 @@
 #endif
 #endif
 
-#if defined __NVCC__ && defined __CUDACC__
+#if (defined __NVCC__ || defined __CUDACC_RTC__) && defined __CUDACC__
 // MSVC 14.16 (required by CUDA 9.*) does not support the _Pragma keyword, so
 // we instead use Microsoft's __pragma extension.
 #if defined _MSC_VER
@@ -131,6 +131,10 @@ EIGEN_NV_DIAG_SUPPRESS(2886)
 EIGEN_NV_DIAG_SUPPRESS(2929)
 EIGEN_NV_DIAG_SUPPRESS(2977)
 EIGEN_NV_DIAG_SUPPRESS(20012)
+#if defined __CUDACC_RTC__
+// Disable the "support for trigraphs is disabled" message of NVRTC
+EIGEN_NV_DIAG_SUPPRESS(1406)
+#endif
 #undef EIGEN_NV_DIAG_SUPPRESS
 #undef EIGEN_MAKE_PRAGMA
 #endif

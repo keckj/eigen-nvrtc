@@ -43,12 +43,27 @@ inline EIGEN_MATHFUNC_RETVAL(random, Scalar) random() {
 }
 
 // TODO: replace or provide alternatives to this, e.g. std::random_device
+#if defined(EIGEN_CUDACC_RTC)
+// There is no std::rand() with NVRTC: random number generation (e.g. DenseBase::Random()) is not
+// available and traps at runtime. (This cannot be a compile-time error since random_impl<bool> is not a
+// template.)
+struct eigen_random_device {
+  using ReturnType = int;
+  static constexpr int Entropy = 31;
+  static constexpr ReturnType Highest = 0x7fffffff;
+  static EIGEN_DEVICE_FUNC inline ReturnType run() {
+    __trap();
+    return 0;
+  }
+};
+#else
 struct eigen_random_device {
   using ReturnType = int;
   static constexpr int Entropy = meta_floor_log2<(unsigned int)(RAND_MAX) + 1>::value;
   static constexpr ReturnType Highest = RAND_MAX;
   static EIGEN_DEVICE_FUNC inline ReturnType run() { return std::rand(); }
 };
+#endif
 
 // Fill a built-in unsigned integer with numRandomBits beginning with the least significant bit
 template <typename Scalar>

@@ -307,6 +307,8 @@ struct NumTraits<Array<Scalar, Rows, Cols, Options, MaxRows, MaxCols> > {
   constexpr static int max_digits10() { return NumTraits<Scalar>::max_digits10(); }
 };
 
+// std::string is not available with NVRTC.
+#ifndef EIGEN_CUDACC_RTC
 template <>
 struct NumTraits<std::string> : GenericNumTraits<std::string> {
   enum { RequireInitialization = 1, ReadCost = HugeCost, AddCost = HugeCost, MulCost = HugeCost };
@@ -322,6 +324,7 @@ struct NumTraits<std::string> : GenericNumTraits<std::string> {
   static inline std::string infinity();
   static inline std::string quiet_NaN();
 };
+#endif
 
 // Empty specialization for void to allow template specialization based on NumTraits<T>::Real with T==void and SFINAE.
 template <>

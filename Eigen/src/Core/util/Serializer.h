@@ -10,7 +10,9 @@
 #ifndef EIGEN_SERIALIZER_H
 #define EIGEN_SERIALIZER_H
 
+#ifndef EIGEN_CUDACC_RTC
 #include <type_traits>
+#endif
 
 // The Serializer class encodes data into a memory buffer so it can be later
 // reconstructed. This is mainly used to send objects back-and-forth between
